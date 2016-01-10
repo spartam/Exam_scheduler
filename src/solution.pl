@@ -1,4 +1,6 @@
-:- module(solution, 		[is_valid/1]).
+:- module(solution, 		[is_valid/1,
+							 is_valid_event/1,
+							 my_write/2]).
 :- use_module(auxilery, 	[in_interval/3,
 							 end/3]).
 
@@ -108,7 +110,7 @@ is_valid_room(Start, Day, RID, EID) :-	availability(RID, Day, Open, Close),
 during_exam_period(Day) :- 	first_day(FirstDay),
 							last_day(LastDay),
 							in_interval(Day, FirstDay, LastDay).
-during_exam_period(Day) :- !.
+during_exam_period(_) :- fail, !.
 
 my_write(Stream, Atom) :- 	write(Stream, Atom),
 							nl(Stream).
