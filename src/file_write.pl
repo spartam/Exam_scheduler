@@ -1,0 +1,1 @@
+open('fail_time_calc.txt', write, Stream), forall(fails_schedule(S), my_write(Stream, S)), close(Stream).

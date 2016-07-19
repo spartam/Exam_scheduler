@@ -11,3 +11,4 @@ find_solution_heuristically([], []).
 find_solution_heuristically([event(EID, RID, Day, Start) | OtherEvents], [EID | OtherEIDS]):- 	sorted_cost_event_list(EventList, EID),
 																								member(event(EID, RID, Day, Start), EventList),
 																								find_solution_heuristically(OtherEvents, OtherEIDS).
+
