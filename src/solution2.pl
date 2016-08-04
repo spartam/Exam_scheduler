@@ -1,8 +1,14 @@
+:- module(solution, [is_valid/1, is_valid_event/1, my_write/2]).
+
 eid(event(EID, _, _, _), EID).
 rid(event(_, RID, _, _), RID).
 day(event(_, _, Day, _), Day).
 start(event(_, _, _, Start), Start).
 
+is_valid(schedule(EventList)) :-	nonvar(EventList),
+									sort(EventList, Sorted),
+									findall(EID, exam(EID, _), EIDS),
+									is_conflict_free_list(Sorted, EIDS).
 
 is_valid(schedule(EventList)) :-	findall(EID, exam(EID, _), EIDS),
 									is_conflict_free_list(EventList, EIDS).
