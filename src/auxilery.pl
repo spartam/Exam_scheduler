@@ -5,7 +5,7 @@
 start_lunch_break(12).
 end_lunch_break(13).
 
-%% End(+EID, +Start, -End)
+%% End(+EID, +Start, ?End)
 %% calculates the End time of an exam
 end(EID, Start, End) :- duration(EID, Duration),
 						in_interval(Start, 0, 23),
