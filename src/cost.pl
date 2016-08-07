@@ -10,7 +10,7 @@
 fails_schedule(S):-	is_valid(S),
 					not(cost(S, _)).
 
-sorted_cost_event_list(EL, EID):- 	findall(event(EID, RID, Day, Hour), calculate_event_cost(event(EID, RID, Day, Hour), _), ELUnsorted),
+sorted_cost_event_list(EL, EID):- 	findall([Cost, event(EID, RID, Day, Hour)], event_cost(event(EID, RID, Day, Hour), Cost), ELUnsorted),
 									sort(ELUnsorted, EL).
 
 cost(Schedule, Cost):- 	nonvar(Schedule),
@@ -44,8 +44,12 @@ calculate_same_day_cost(event(EID, RID, Day, Start), [event(EID2, _, Day2, _) | 
 																														findall(LID, teaches(LID, CID), C1L),
 																														findall(LID, teaches(LID, CID2), C2L),
 																														intersection(C1L, C2L, BothLecturers),
-																														calculate_same_day_cost(BothStudent, StudentCost),
-																														calculate_same_day_cost(BothLecturers, LecturerCost).
+																														calculate_same_day_cost(BothStudent, CurrentStudentCost),
+																														calculate_same_day_cost(BothLecturers, CurrentLecturerCost),
+																														calculate_same_day_cost(event(EID, RID, Day, Start), Rest, OtherStudentCosts, OtherLecturersCost),
+																														StudentCost is OtherStudentCosts + CurrentStudentCost,
+																														LecturerCost is OtherLecturersCost + CurrentLecturerCost.
+																														
 calculate_same_day_cost(event(EID, RID, Day, Start), [event(_, _, _, _) | Rest], StudentCost, LecturerCost) :- 	calculate_same_day_cost(event(EID, RID, Day, Start), Rest, StudentCost, LecturerCost).
 
 calculate_same_day_cost([], 0).
@@ -79,6 +83,10 @@ calculate_b2b_cost([], 0).
 calculate_b2b_cost([Current | Rest], Cost) :- 	sc_b2b(Current, CurrentCost),
 												calculate_b2b_cost(Rest, RestCost),
 												Cost is CurrentCost + RestCost, !.
+
+event_cost(Event, Cost):- is_valid_event(Event),
+						  calculate_event_cost(Event, StudentCost, LecturerCost),
+						  Cost is StudentCost + LecturerCost.
 
 calculate_event_cost(Event, StudentCost, LecturerCost):-	is_valid_event(Event),
 															lecturer_cost(Event, LecturerCost),
