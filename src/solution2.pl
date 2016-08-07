@@ -1,4 +1,4 @@
-:- module(solution, [is_valid/1, is_valid_event/1, my_write/2]).
+:- module(solution, [is_valid/1, is_valid_event/1, my_write/2, is_event_conflict_free_with_list/2]).
 
 eid(event(EID, _, _, _), EID).
 rid(event(_, RID, _, _), RID).
@@ -55,6 +55,7 @@ is_valid_event(event(EID, RID, Day, Start)) :-	availability(RID, Day, Open, Clos
 												findall(SID, follows(SID, CID), Students),
 												length(Students, NumberOfStudents),
 												Capacity >= NumberOfStudents.
+
 
 my_write(Stream, Atom) :- 	write(Stream, Atom),
 							nl(Stream).
