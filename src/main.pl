@@ -1,5 +1,5 @@
 :- module(exam_schedular, []).
-:- reexport([solution2,
+:- reexport([solution,
 			 cost,
 			 heuristic,
 			 optimal,

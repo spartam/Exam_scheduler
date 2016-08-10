@@ -1,4 +1,4 @@
-:-module(print, 			[pretty_print/3]).
+:-module(print, 			[pretty_print/1]).
 
 :- use_module(auxilery, 	[in_interval/3,
 							 end/3]).
@@ -19,7 +19,7 @@ filter_by_day([event(EID, RID, Day, Start) | RemainingEvents], Day, [event(EID, 
 filter_by_day([event(EID, RID, Day, Start) | RemainingEvents], Day2, FilteredEvents) :-	filter_by_day(RemainingEvents, Day2, FilteredEvents), !.
 
 chronological([], []).
-chronological([event(EID, RID, Day, Start)], [event(EID, RID, Day, Start)]]).
+chronological([event(EID, RID, Day, Start)], [event(EID, RID, Day, Start)]).
 chronological([event(EID, RID, Day, Start) | RemainingEvents], Sorted) :- 	chronological(RemainingEvents, List),
 																			insert(event(EID, RID, Day, Start), List, Sorted), !.
 

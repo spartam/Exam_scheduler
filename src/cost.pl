@@ -4,15 +4,18 @@
 :- use_module(auxilery, 	[during_lunch_break/1,
 							 in_interval/3,
 							 end/3]).
-:- use_module(solution2, 	[is_valid/1,
+:- use_module(solution, 	[is_valid/1,
 							 is_valid_event/1]).
 
-fails_schedule(S):-	is_valid(S),
-					not(cost(S, _)).
-
+%% sorted_cost_event_list(-EL, +EID)
+%% Generates a list events of exams with EID sorted on cost
 sorted_cost_event_list(EL, EID):- 	findall([Cost, event(EID, RID, Day, Hour)], event_cost(event(EID, RID, Day, Hour), Cost), ELUnsorted),
 									sort(ELUnsorted, EL).
 
+%% cost(?Schedule, ?Cost)
+%% calculates all schedules and there costs.
+%% calculates all schedules given a certain cost
+%% calculates the cost of a given schedule
 cost(Schedule, Cost):- 	nonvar(Schedule),
 						is_valid(Schedule),
 						calculate_cost(Schedule, Cost),!.
@@ -20,12 +23,17 @@ cost(Schedule, Cost):- 	nonvar(Schedule),
 cost(Schedule, Cost):- 	is_valid(Schedule),
  						calculate_cost(Schedule, Cost).
 
+%% calculate_cost(+Events, -Cost)
+%% calculates the cost of an EventsList
 calculate_cost(schedule(Events), Cost) :- 	calculate_cost(Events, StudentCost, LecturerCost),
 											findall(LID, lecturer(LID, _), Lecturers),
 											findall(SID, student(SID, _), Students),
 											length(Lecturers, NumberOfLecturers),
 											length(Students, NumberOfStudents),
 											Cost is (LecturerCost / NumberOfLecturers) + (StudentCost / (NumberOfStudents * 2)), !.
+
+%% calculate_cost(+Events, -StudentCost, -TeacherCost)
+%% calculates the cost for teachers and students separatly of a given EventsList
 calculate_cost([], 0, 0).
 calculate_cost([Event | OtherEvents], StudentCost, TeacherCost) :-	calculate_cost(OtherEvents, OtherEventsStudentCost, OtherEventsTeacherCost),
 																	calculate_b2b_cost(Event, OtherEvents, B2BStudent, B2BTeacher),
@@ -34,6 +42,8 @@ calculate_cost([Event | OtherEvents], StudentCost, TeacherCost) :-	calculate_cos
 																	StudentCost is EventStudentCost + B2BStudent + OtherEventsStudentCost + SameDayStudent,
 																	TeacherCost is EventTeacherCost + B2BTeacher + OtherEventsTeacherCost + SameDayLecturer.
 
+%% calculate_same_day_cost(+Event, +EventList, -StudentCost, -TeacherCost)
+%% calculates the teacher and student cost for an event taking place on the same day of events in the list
 calculate_same_day_cost(_, [], 0, 0).
 calculate_same_day_cost(event(EID, RID, Day, Start), [event(EID2, _, Day2, _) | Rest], StudentCost, LecturerCost) :- 	Day == Day2,
 																														has_exam(CID, EID),
@@ -49,15 +59,19 @@ calculate_same_day_cost(event(EID, RID, Day, Start), [event(EID2, _, Day2, _) | 
 																														calculate_same_day_cost(event(EID, RID, Day, Start), Rest, OtherStudentCosts, OtherLecturersCost),
 																														StudentCost is OtherStudentCosts + CurrentStudentCost,
 																														LecturerCost is OtherLecturersCost + CurrentLecturerCost.
-																														
+
 calculate_same_day_cost(event(EID, RID, Day, Start), [event(_, _, _, _) | Rest], StudentCost, LecturerCost) :- 	calculate_same_day_cost(event(EID, RID, Day, Start), Rest, StudentCost, LecturerCost).
 
+%% calculate_same_day_cost(+PID, -Cost)
+%% adds the costs of the PIDS to the total same day costs penalty
 calculate_same_day_cost([], 0).
 calculate_same_day_cost([Current|Rest], Cost) :-	sc_same_day(Current, CurrentCost),
 													calculate_same_day_cost(Rest, RestCost),
 													Cost is CurrentCost + RestCost.
 calculate_same_day_cost([_|Rest], Cost) :-	calculate_same_day_cost(Rest, Cost).
 
+%% calculate_b2b_cost(+Event, +Events, -StudentCost, -TeacherCost)
+%% calculates the cost for events taking place B2B
 calculate_b2b_cost(_, [], 0, 0).
 calculate_b2b_cost(event(EID, RID, Day, Start), [event(_, _, Day2, _) | Rest], StudentCost, LecturerCost) :-	Day \= Day2,
 																												calculate_b2b_cost(event(EID, RID, Day, Start), Rest, StudentCost, LecturerCost).
@@ -79,30 +93,54 @@ calculate_b2b_cost(event(EID, RID, Day, Start), [event(EID2, _, _, _) | Rest], S
 																														calculate_b2b_cost(event(EID, RID, Day, Start), Rest, StudentRestCost, LecturerRestCost),
 																														StudentCost is CurrentB2BStudentCost + StudentRestCost,
 																														LecturerCost is CurrentB2BLecturerCost + LecturerRestCost,!.
+
+%% calculate_b2b_cost(+PIDS, -Cost)
+%% calculates the B2B cost of a given list of people
 calculate_b2b_cost([], 0).
 calculate_b2b_cost([Current | Rest], Cost) :- 	sc_b2b(Current, CurrentCost),
 												calculate_b2b_cost(Rest, RestCost),
 												Cost is CurrentCost + RestCost, !.
 
-event_cost(Event, Cost):- is_valid_event(Event),
-						  calculate_event_cost(Event, StudentCost, LecturerCost),
-						  Cost is StudentCost + LecturerCost.
+%% event_cost(?Event, ?Cost)
+%% calculates all possible events and their cost
+%% Generates all events with a certain cost
+%% Generates the cost of a given Event
+%% checks if a given event has the given cost
+%% only used when only the cost of the event itself is required
+event_cost(event(EID, RID, Day, Start), Cost):- is_valid_event(event(EID, RID, Day, Start)),
+						  calculate_event_cost(event(EID, RID, Day, Start), StudentCost, LecturerCost),
+						  has_exam(CID, EID),
+						  findall(SID, follows(SID, CID), CS),
+						  findall(LID, teaches(LID, CID), CL),
+						  length(CS, CSC),
+						  length(CL, CLC),
+						  Cost is ((StudentCost / CSC) + (LecturerCost / CLC)) * 2.
 
+%% calculate_event_cost(?Event, ?StudentCost, ?LecturerCost)
+%% calculates the teacher and studentcost of an event.
+%% calculates the event with a certain studentcost and / or TeacherCost
 calculate_event_cost(Event, StudentCost, LecturerCost):-	is_valid_event(Event),
 															lecturer_cost(Event, LecturerCost),
 															student_cost(Event, StudentCost).
 
+%% lecturer_cost(+Event, -Cost)
+%% calculates teacher cost of a given event
 lecturer_cost(Event, Cost):- 	lecturer_lunch_cost(Event, IWantTooEatAtThatMomentCost),
 								lecturer_exam_in_period_cost(Event, IDontWantThatMomentCost),
 								lecturer_not_in_period_cost(Event, IDontWantThatMomentEitherCost),
 								Cost is IWantTooEatAtThatMomentCost + IDontWantThatMomentCost + IDontWantThatMomentEitherCost,!.
 
+%% student cost(+Event, -Cost)
+%% calculates student cost of a given event
 student_cost(Event, Cost):- student_lunch_cost(Event, IWantTooEatAtThatMomentCost),
 							student_not_in_period_cost(Event, IDontWantThatMomentCost),
 							Cost is IWantTooEatAtThatMomentCost + IDontWantThatMomentCost,!.
 
 
 %% Lecturers
+%% CODE DUPLICATION!!
+%% NOOOO
+%% What did you do?
 lecturer_lunch_cost(Event, 0):- not(during_lunch_break(Event)),!.
 lecturer_lunch_cost(event(EID, _, _, _), Cost) :-	has_exam(CID, EID),
 													findall(LID, teaches(LID, CID), LIDS),
